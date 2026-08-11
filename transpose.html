@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transpose — the same meaning, at six reading levels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..800,0..100,0..1&family=Literata:opsz,wght@7..72,300..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CONFIG NOTE: edit the CONFIG object in the script below,
+   or use the Endpoint panel in the header.
+   ============================================================ */
+
+:root{
+  --ink:#171d1a;
+  --ink-soft:#4a534e;
+  --ink-faint:#8b938d;
+  --paper:#e8ebe4;
+  --pane:#f8f9f5;
+  --rule:#ccd2c8;
+  --rule-soft:#dde1d8;
+
+  /* Level ramp — the accent IS the reading level. Set by JS. */
+  --lv:#5f8f52;
+  --lv-wash:#5f8f5218;
+  --lv-edge:#5f8f5240;
+
+  --r:3px;
+  --shadow:0 1px 0 #ffffff inset, 0 1px 2px rgba(23,29,26,.06), 0 8px 24px -16px rgba(23,29,26,.4);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Literata",Georgia,serif;
+  font-optical-sizing:auto;
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* subtle card-stock texture, not a gradient */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(circle at 1px 1px, rgba(23,29,26,.045) 1px, transparent 0);
+  background-size:4px 4px;
+  opacity:.6;
+}
+
+.wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:20px 20px 64px}
+
+/* ---------- masthead ---------- */
+.mast{
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
+  padding-bottom:16px;margin-bottom:18px;
+  border-bottom:2px solid var(--ink);
+}
+.mast h1{
+  font-family:"Fraunces",Georgia,serif;
+  font-variation-settings:"SOFT" 40,"WONK" 1,"opsz" 96;
+  font-weight:700;font-size:clamp(30px,4.4vw,46px);
+  line-height:.95;letter-spacing:-.022em;margin:0;
+}
+.mast h1 em{font-style:italic;font-variation-settings:"SOFT" 90,"WONK" 1,"opsz" 120;color:var(--lv);transition:color .5s ease}
+.tag{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);max-width:34ch;line-height:1.5;margin-bottom:4px;
+}
+.mast-sp{flex:1 1 40px}
+
+/* ---------- controls ---------- */
+.rig{
+  background:var(--pane);border:1px solid var(--rule);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:16px 18px;margin-bottom:16px;
+}
+.rig-row{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lbl{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:500;
+}
+
+/* the level scale — a dictionary register key, not a generic slider */
+.scale{flex:1 1 460px;min-width:280px}
+.stops{display:flex;gap:3px;margin-bottom:7px}
+.stop{
+  flex:1;border:none;padding:0;cursor:pointer;background:transparent;
+  display:flex;flex-direction:column;gap:5px;align-items:stretch;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  color:var(--ink-faint);text-align:left;
+}
+.stop .bar{height:8px;border-radius:1px;background:var(--sw);opacity:.28;transition:opacity .25s ease,height .25s ease}
+.stop .num{font-size:9.5px;letter-spacing:.1em;font-weight:600}
+.stop:hover .bar{opacity:.55}
+.stop[aria-pressed="true"] .bar{opacity:1;height:13px}
+.stop[aria-pressed="true"] .num{color:var(--ink)}
+.stop:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:2px}
+.scale-read{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:9px}
+.scale-name{
+  font-family:"Fraunces",Georgia,serif;font-variation-settings:"SOFT" 30,"WONK" 1;
+  font-weight:600;font-size:19px;color:var(--lv);letter-spacing:-.01em;transition:color .5s ease;
+}
+.scale-gloss{font-size:13.5px;color:var(--ink-soft);line-height:1.45;flex:1 1 220px;min-width:180px}
+
+input[type=text]{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;
+  padding:8px 10px;border:1px solid var(--rule);border-radius:var(--r);
+  background:#fff;color:var(--ink);width:100%;
+}
+input[type=text]:focus{outline:2px solid var(--lv);outline-offset:-1px;border-color:transparent}
+.lens-field{flex:0 1 250px}
+
+.btn{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:10px 16px;border-radius:var(--r);cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--pane);
+  transition:transform .12s ease,opacity .2s ease;white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.ghost[aria-pressed="true"]{background:var(--lv);border-color:var(--lv);color:#fff}
+.btn:focus-visible{outline:2px solid var(--lv);outline-offset:2px}
+.btn-set{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- panes ---------- */
+.decks{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.decks{grid-template-columns:1fr}}
+
+.deck{
+  background:var(--pane);border:1px solid var(--rule);border-radius:var(--r);
+  box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:340px;overflow:hidden;
+}
+.deck.out{border-color:var(--lv-edge)}
+.deck-head{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--rule-soft);background:#fff;
+}
+.deck.out .deck-head{background:var(--lv-wash);border-bottom-color:var(--lv-edge)}
+.deck-head h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--ink-soft);
+}
+.deck.out .deck-head h2{color:var(--lv)}
+.deck-head .sp{flex:1}
+.chip{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-faint);border:1px solid var(--rule);
+  padding:2px 7px;border-radius:99px;white-space:nowrap;
+}
+.chip.warn{color:#9a5a1b;border-color:#d8ab72;background:#fbf1e3}
+
+.body{padding:18px 20px 22px;flex:1;overflow-y:auto;max-height:60vh}
+.prose{font-size:17px;line-height:1.95;white-space:pre-wrap;word-wrap:break-word}
+
+textarea{
+  width:100%;min-height:300px;border:none;background:transparent;resize:vertical;
+  font-family:"Literata",Georgia,serif;font-size:17px;line-height:1.8;color:var(--ink);
+  padding:18px 20px;outline:none;
+}
+textarea::placeholder{color:var(--ink-faint)}
+
+/* ---------- the signature: interlinear gloss ---------- */
+.sw{
+  position:relative;cursor:pointer;border-radius:2px;
+  background:var(--lv-wash);
+  box-shadow:inset 0 -2px 0 var(--lv-edge);
+  transition:background .18s ease,box-shadow .18s ease;
+}
+.sw.lit,.sw:hover{background:var(--lv);color:#fff;box-shadow:inset 0 -2px 0 var(--lv)}
+.sw:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.gl{
+  display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;letter-spacing:.03em;line-height:1;
+  color:var(--lv);opacity:.85;
+  position:absolute;left:0;right:0;top:calc(100% + 3px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+}
+.sw.lit .gl,.sw:hover .gl{opacity:1;font-weight:500}
+body.no-gloss .gl{display:none}
+body.no-gloss .prose{line-height:1.85}
+.src .sw{background:transparent;box-shadow:inset 0 -2px 0 var(--rule);color:var(--ink-soft)}
+.src .sw.lit{background:var(--ink);color:var(--pane);box-shadow:inset 0 -2px 0 var(--ink)}
+
+.caret{
+  display:inline-block;width:2px;height:1em;background:var(--lv);
+  vertical-align:-.14em;animation:blink 1s steps(2) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- diff view ---------- */
+.diff{
+  display:none;background:var(--pane);border:1px solid var(--rule);
+  border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;
+}
+.diff.on{display:block}
+.diff-bar{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;
+  border-bottom:1px solid var(--rule);background:#fff;
+}
+.diff-bar .sp{flex:1}
+.diff-scroll{max-height:70vh;overflow-y:auto;position:relative}
+
+.grid-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px minmax(0,1fr)}
+.diff-head{
+  position:sticky;top:0;z-index:6;background:#fff;
+  border-bottom:1px solid var(--rule);
+}
+.diff-head span{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+  padding:8px 12px;font-weight:600;
+}
+.diff-head .h-out{color:var(--lv)}
+
+.row{border-bottom:1px solid var(--rule-soft);transition:background .15s ease}
+.row:last-child{border-bottom:none}
+.gut{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;
+  color:var(--ink-faint);text-align:right;padding:13px 8px 0 4px;
+  user-select:none;border-right:1px solid var(--rule-soft);
+}
+.cell{padding:11px 14px;font-size:16.5px;line-height:1.9;word-wrap:break-word;min-width:0}
+.row.same .cell{color:var(--ink-soft);opacity:.62}
+.row.same:hover .cell{opacity:.9}
+.row.chg .cell-l{background:rgba(23,29,26,.032)}
+.row.chg .cell-r{background:var(--lv-wash)}
+.row.chg .gut-r{color:var(--lv);font-weight:600}
+.cell-l .sw{background:transparent;box-shadow:inset 0 -2px 0 var(--rule);color:var(--ink-soft)}
+.cell-l .sw.lit{background:var(--ink);color:var(--pane);box-shadow:inset 0 -2px 0 var(--ink)}
+body.only-chg .row.same{display:none}
+
+@media(max-width:820px){
+  .diff-head{display:none}
+  .grid-row{grid-template-columns:1fr}
+  .gut{display:none}
+  .row{padding:4px 0}
+  .cell-l{padding-bottom:4px}
+  .cell-l::before,.cell-r::before{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;
+    letter-spacing:.13em;text-transform:uppercase;display:block;margin-bottom:2px;
+  }
+  .cell-l::before{content:"was";color:var(--ink-faint)}
+  .cell-r::before{content:"now";color:var(--lv)}
+  .row.same .cell-r{display:none}
+  .row.same .cell-l::before{content:"unchanged"}
+}
+
+/* ---------- ladder ---------- */
+.ladder{display:none;flex-direction:column;gap:0;margin-top:14px}
+.ladder.on{display:flex}
+.rung{
+  background:var(--pane);border:1px solid var(--rule);border-top-width:0;
+  padding:15px 18px;display:grid;grid-template-columns:132px 1fr;gap:20px;align-items:baseline;
+}
+.rung:first-child{border-top-width:1px;border-radius:var(--r) var(--r) 0 0}
+.rung:last-child{border-radius:0 0 var(--r) var(--r)}
+@media(max-width:700px){.rung{grid-template-columns:1fr;gap:7px}}
+.rung-key{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;
+  letter-spacing:.11em;text-transform:uppercase;font-weight:600;
+  display:flex;align-items:center;gap:8px;
+}
+.rung-key .dot{width:9px;height:9px;border-radius:2px;flex:none}
+.rung-txt{font-size:16.5px;line-height:1.62}
+.rung-txt .m{border-radius:2px;padding:0 1px}
+
+/* ---------- stats ---------- */
+.strip{
+  display:flex;flex-wrap:wrap;gap:0;margin-top:14px;
+  background:var(--pane);border:1px solid var(--rule);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.stat{flex:1 1 130px;padding:11px 16px;border-right:1px solid var(--rule-soft);min-width:0}
+.stat:last-child{border-right:none}
+.stat .k{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:3px;
+}
+.stat .v{
+  font-family:"Fraunces",Georgia,serif;font-variation-settings:"SOFT" 20,"WONK" 0;
+  font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.1;
+}
+.stat .v small{font-size:12px;font-weight:400;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;letter-spacing:0}
+.arrow{color:var(--lv)}
+
+/* ---------- popover ---------- */
+.pop{
+  position:absolute;z-index:60;max-width:290px;
+  background:var(--ink);color:var(--paper);border-radius:var(--r);
+  padding:11px 13px;font-size:13.5px;line-height:1.5;
+  box-shadow:0 12px 32px -10px rgba(23,29,26,.6);
+}
+.pop .h{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.11em;text-transform:uppercase;opacity:.55;display:block;margin-bottom:5px;
+}
+.pop .sw-pair{font-family:"Literata",serif;font-size:14.5px;margin-bottom:6px}
+.pop .sw-pair b{color:#fff}
+.pop .old{opacity:.5;text-decoration:line-through}
+
+/* ---------- settings drawer ---------- */
+.drawer{display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--rule)}
+.drawer.on{display:block}
+.drawer .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+
+.note{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;line-height:1.6;
+  color:var(--ink-faint);margin-top:9px;
+}
+.err{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.6;
+  color:#8c2f16;background:#fbeae4;border:1px solid #e4b6a6;
+  border-radius:var(--r);padding:11px 13px;margin-top:12px;display:none;
+}
+.err.on{display:block}
+.empty{color:var(--ink-faint);font-size:15px;line-height:1.7;font-style:italic}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <h1>Trans<em>pose</em></h1>
+    <div class="mast-sp"></div>
+    <p class="tag">One meaning, six vocabularies.<br>Change the reader, not the sentence.</p>
+  </header>
+
+  <section class="rig">
+    <div class="rig-row">
+      <div class="field scale">
+        <span class="lbl">Reader</span>
+        <div class="stops" id="stops" role="group" aria-label="Reading level"></div>
+        <div class="scale-read">
+          <span class="scale-name" id="lvName">—</span>
+          <span class="scale-gloss" id="lvGloss">—</span>
+        </div>
+      </div>
+
+      <div class="field lens-field">
+        <label class="lbl" for="lens">Field lens <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="text" id="lens" placeholder="cardiology · machining · law · none">
+      </div>
+
+      <div class="field">
+        <span class="lbl">&nbsp;</span>
+        <div class="btn-set">
+          <button class="btn" id="go">Transpose</button>
+          <button class="btn ghost" id="diffBtn" aria-pressed="true">Diff</button>
+          <button class="btn ghost" id="ladderBtn" aria-pressed="false">Ladder</button>
+          <button class="btn ghost" id="glossBtn" aria-pressed="true">Gloss</button>
+          <button class="btn ghost" id="setBtn" aria-pressed="false">Endpoint</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="g">
+        <div class="field">
+          <label class="lbl" for="cfgUrl">Base URL</label>
+          <input type="text" id="cfgUrl">
+        </div>
+        <div class="field">
+          <label class="lbl" for="cfgModel">Model</label>
+          <input type="text" id="cfgModel">
+        </div>
+        <div class="field">
+          <label class="lbl" for="cfgKey">API key</label>
+          <input type="text" id="cfgKey" placeholder="leave blank if none">
+        </div>
+      </div>
+      <p class="note">Settings live in this tab only — nothing is stored. For permanent defaults, edit the CONFIG object at the top of the script.</p>
+    </div>
+
+    <div class="err" id="err"></div>
+  </section>
+
+  <div class="decks" id="decks">
+    <section class="deck">
+      <div class="deck-head">
+        <h2>Source</h2>
+        <span class="sp"></span>
+        <button class="btn ghost" id="editBtn" style="display:none;padding:4px 10px;font-size:10px">Edit</button>
+        <span class="chip" id="srcChip">0 words</span>
+      </div>
+      <textarea id="input" spellcheck="false" placeholder="Paste anything. A paragraph from a paper, an email you have to send, a page of a novel, the instructions on a pill bottle.
+
+Then move the reader up and down the scale and watch which words the meaning was hiding in."></textarea>
+      <div class="body" id="srcOut" style="display:none"><div class="prose src" id="srcProse"></div></div>
+    </section>
+
+    <section class="deck out">
+      <div class="deck-head">
+        <h2 id="outTitle">Output</h2>
+        <span class="sp"></span>
+        <span class="chip" id="driftChip" style="display:none"></span>
+        <span class="chip" id="outChip">idle</span>
+      </div>
+      <div class="body" id="outBody">
+        <div class="prose" id="outProse"><p class="empty">Nothing yet. Paste your text and press Transpose.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="diff" id="diffView">
+    <div class="diff-bar">
+      <button class="btn ghost" id="diffEdit" style="padding:4px 10px;font-size:10px">Edit source</button>
+      <button class="btn ghost" id="onlyChg" aria-pressed="false" style="padding:4px 10px;font-size:10px">Changes only</button>
+      <span class="sp"></span>
+      <span class="chip" id="diffCount">—</span>
+    </div>
+    <div class="diff-scroll" id="diffScroll">
+      <div class="grid-row diff-head">
+        <span></span><span>Source</span><span></span><span class="h-out" id="diffOutLabel">Output</span>
+      </div>
+      <div id="diffRows"></div>
+    </div>
+  </div>
+
+  <div class="ladder" id="ladder"></div>
+
+  <div class="strip" id="strip" style="display:none">
+    <div class="stat"><span class="k">Words</span><span class="v" id="sWords">—</span></div>
+    <div class="stat"><span class="k">Swapped</span><span class="v" id="sSwap">—</span></div>
+    <div class="stat"><span class="k">Grade level</span><span class="v" id="sGrade">—</span></div>
+    <div class="stat"><span class="k">Syllables / word</span><span class="v" id="sSyl">—</span></div>
+    <div class="stat"><span class="k">Longest new word</span><span class="v" id="sLong" style="font-size:16px">—</span></div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — edit these three lines and the app is yours.
+   ============================================================ */
+const CONFIG = {
+  baseUrl: "http://jtalbott-gb10.devices.kent.edu:8000/v1",
+  model:   "intel/Qwen3.5-122B-A10B-int4-AutoRound",
+  apiKey:  ""
+};
+
+/* ------------------------------------------------------------
+   The scale. Colour is not decoration here — it encodes level.
+   ------------------------------------------------------------ */
+const LEVELS = [
+  { n:1, key:"Plain",       color:"#c08a2e",
+    gloss:"Roughly age 8. Core everyday words only.",
+    spec:`Vocabulary a competent 8-year-old owns: short, concrete, mostly Old English roots. NO abstraction, NO Latinate technical terms. Where no simple single word exists, UNPACK the idea into a short plain phrase — expansion is correct here, not a failure. "Cephalalgia" becomes "a bad headache". Prefer verbs over nominalisations: "decide" not "make a determination".` },
+  { n:2, key:"Everyday",    color:"#9c8f33",
+    gloss:"Roughly age 13. Common words, common Latin roots.",
+    spec:`Ordinary adult conversation and popular news writing. Common Latinate words are fine ("consider", "explain", "situation"). Avoid jargon, avoid literary or rare words. This is the register of a well-written text message to a friend.` },
+  { n:3, key:"General",     color:"#5f8f52",
+    gloss:"Educated adult. Broadsheet register.",
+    spec:`Serious general-audience prose — a good newspaper's front page or a well-edited nonfiction book. Precise, but every word remains in the common educated vocabulary. No specialist terminology.` },
+  { n:4, key:"Literary",    color:"#2f8279",
+    gloss:"Well-read. Words chosen for exact shade of meaning.",
+    spec:`The register of a widely-read person. This level is NOT about longer words — it is about EXACTNESS. Choose the word whose connotation is precisely right where the original was merely adequate: "reticent" where the source said "quiet", "brittle" where it said "fragile", "concede" where it said "admit". If a longer word is no more exact than the original, do not swap it.` },
+  { n:5, key:"Specialist",  color:"#2a6ea8",
+    gloss:"Trained in the field. Terms of art.",
+    spec:`Someone professionally trained in whatever this text is about. Identify the domain and use its genuine terms of art — the words a practitioner would actually use with a colleague. Compress descriptive phrases into single technical terms where the field has one. Accuracy matters more than impressiveness: never invent a term, and never use one that a real practitioner would find wrong.` },
+  { n:6, key:"Research",    color:"#4b3f9e",
+    gloss:"Publishing in the field. Maximum resolution.",
+    spec:`The register of a peer-reviewed paper or a specification document in this field. Maximum semantic resolution: use the most exact term available even if only a few hundred people would recognise it, and prefer the field's standardised nomenclature over informal usage. Compress aggressively — a whole clause may become one term of art. Still never invent terminology.` }
+];
+
+let LV = 3;
+let busy = false;
+let segments = [];          // [{type:'plain',text} | {type:'swap',o,n,i}]
+let sourceText = "";
+let ladderOn = false;
+let diffOn = true;
+let abort = null;
+
+const $ = id => document.getElementById(id);
+
+/* ------------------------------------------------------------ scale UI */
+function buildStops(){
+  $("stops").innerHTML = LEVELS.map(l =>
+    `<button class="stop" data-n="${l.n}" style="--sw:${l.color}" aria-pressed="false" title="${l.key}">
+       <span class="bar"></span><span class="num">${l.n}</span>
+     </button>`).join("");
+  $("stops").querySelectorAll(".stop").forEach(b =>
+    b.addEventListener("click", () => setLevel(+b.dataset.n)));
+}
+
+function setLevel(n){
+  LV = n;
+  const l = LEVELS[n-1];
+  document.documentElement.style.setProperty("--lv", l.color);
+  document.documentElement.style.setProperty("--lv-wash", l.color+"18");
+  document.documentElement.style.setProperty("--lv-edge", l.color+"40");
+  $("lvName").textContent = `${n} · ${l.key}`;
+  $("lvGloss").textContent = l.gloss;
+  $("stops").querySelectorAll(".stop").forEach(b =>
+    b.setAttribute("aria-pressed", (+b.dataset.n === n) ? "true" : "false"));
+  $("outTitle").textContent = `Read as — ${l.key}`;
+  const dl = $("diffOutLabel"); if(dl) dl.textContent = l.key;
+}
+
+/* ------------------------------------------------------------ prompting */
+function systemPrompt(level, lens){
+  const l = LEVELS[level-1];
+  return `You are a lexical transposer. You re-render a text for a reader with a different vocabulary, WITHOUT changing what the text says.
+
+TARGET READER — level ${l.n}, "${l.key}"
+${l.spec}
+${lens ? `\nDOMAIN LENS: read and re-render this text as a specialist in ${lens} would phrase it. Prefer that field's vocabulary wherever it legitimately applies.\n` : ""}
+GOVERNING IDEA
+Moving up this scale is not about longer words. It is about higher resolution — a bigger vocabulary lets a reader say a more exact thing in the same space. Moving down is not about dumber words; it is about unpacking a compressed idea into its plain parts. Swap a word only when the new word is genuinely better calibrated to this reader.
+
+HARD RULES
+1. Meaning is fixed. Add nothing, drop nothing, reverse nothing.
+2. Keep the same sentences in the same order, with the same punctuation and paragraph breaks.
+3. Never alter proper nouns, names, numbers, dates, units, code, or anything inside quotation marks.
+4. Swap as many content words as you honestly can — aim for most nouns, verbs, adjectives and adverbs — but leave a word alone if no better-calibrated alternative exists.
+5. Keep grammar correct after every swap: fix agreement and inflection so the sentence still reads naturally.
+
+OUTPUT FORMAT
+Return the rewritten text and nothing else. No preamble, no commentary, no code fences.
+Mark every substitution inline as [[original|replacement]]. Leave untouched text bare.
+A substitution may span multiple words on either side.
+
+EXAMPLE (target: level 5, medicine)
+IN:  The patient said her chest hurt after she walked up the stairs.
+OUT: The [[patient|patient]] [[said|reported]] [[her chest hurt|substernal chest pain]] [[after she walked up the stairs|on exertion]].
+
+Note in that example the first pair was unnecessary — do not emit a pair when the two sides are identical. Emit bare text instead.`;
+}
+
+/* ------------------------------------------------------------ streaming */
+async function callModel(messages, {maxTokens=2400, temp=0.35, signal}={}){
+  const url = ($("cfgUrl").value || CONFIG.baseUrl).replace(/\/+$/,"") + "/chat/completions";
+  const key = $("cfgKey").value || CONFIG.apiKey;
+  const headers = {"Content-Type":"application/json"};
+  if(key) headers["Authorization"] = "Bearer " + key;
+
+  const res = await fetch(url, {
+    method:"POST", headers, signal,
+    body: JSON.stringify({
+      model: $("cfgModel").value || CONFIG.model,
+      messages, stream:true, temperature:temp, max_tokens:maxTokens,
+      // Qwen3.5 thinks by default on this server. Thinking tokens are pure
+      // latency for a rewrite task, so switch it off per request.
+      chat_template_kwargs: { enable_thinking:false }
+    })
+  });
+  if(!res.ok) throw new Error(`${res.status} ${res.statusText} — ${(await res.text()).slice(0,300)}`);
+  return res.body.getReader();
+}
+
+async function* streamText(reader){
+  const dec = new TextDecoder();
+  let buf = "";
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, {stream:true});
+    const lines = buf.split("\n");
+    buf = lines.pop();
+    for(const line of lines){
+      const t = line.trim();
+      if(!t.startsWith("data:")) continue;
+      const payload = t.slice(5).trim();
+      if(payload === "[DONE]") return;
+      try{
+        const d = JSON.parse(payload).choices?.[0]?.delta;
+        // reasoning models emit content:null while thinking — skip, don't crash
+        if(d && typeof d.content === "string" && d.content) yield d.content;
+      }catch(e){ /* partial frame, ignore */ }
+    }
+  }
+}
+
+/* ------------------------------------------------------------ markup parse */
+const PAIR = /\[\[([^\]|]*?)\|([^\][]*?)\]\]/g;
+
+function parseMarkup(text, startIndex=0){
+  const segs = []; let last = 0, m, i = startIndex;
+  PAIR.lastIndex = 0;
+  while((m = PAIR.exec(text)) !== null){
+    if(m.index > last) segs.push({type:"plain", text:text.slice(last, m.index)});
+    if(m[1] === m[2]) segs.push({type:"plain", text:m[2]});
+    else segs.push({type:"swap", o:m[1], n:m[2], i:i++});
+    last = PAIR.lastIndex;
+  }
+  let tail = text.slice(last), pending = "";
+  const open = tail.lastIndexOf("[[");
+  if(open !== -1){ pending = tail.slice(open); tail = tail.slice(0, open); }
+  if(tail) segs.push({type:"plain", text:tail});
+  return {segs, pending, next:i};
+}
+
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderOut(segs, caret){
+  let h = segs.map(s => s.type === "plain" ? esc(s.text)
+    : `<span class="sw" data-i="${s.i}" tabindex="0" role="button">${esc(s.n)}<span class="gl">${esc(s.o)}</span></span>`).join("");
+  if(caret) h += '<span class="caret"></span>';
+  $("outProse").innerHTML = h || '<p class="empty">…</p>';
+}
+
+function renderSrc(segs){
+  $("srcProse").innerHTML = segs.map(s => s.type === "plain" ? esc(s.text)
+    : `<span class="sw" data-i="${s.i}" tabindex="0" role="button">${esc(s.o)}</span>`).join("");
+}
+
+/* ------------------------------------------------------------ diff rows
+   The prompt guarantees the same sentences in the same order on both sides,
+   so the sentence is the natural alignment unit. Splitting into sentence
+   rows makes the two columns line up exactly — which means scroll sync is
+   structural rather than a proportional guess that drifts when level 1
+   expands the text or level 6 compresses it.
+   ------------------------------------------------------------ */
+const ABBR = /\b(?:mr|mrs|ms|dr|prof|st|sr|jr|vs|etc|e\.g|i\.e|al|fig|no|vol|approx|dept|univ|inc|ltd|co|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)\.$/i;
+
+function splitSentences(text){
+  const out = []; let start = 0;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(c === "\n" && text[i+1] === "\n"){                 // paragraph break
+      let j = i; while(text[j] === "\n") j++;
+      out.push(text.slice(start, j)); start = j; i = j - 1; continue;
+    }
+    if(c !== "." && c !== "!" && c !== "?") continue;
+    if(c === "." && /\d/.test(text[i-1] || "") && /\d/.test(text[i+1] || "")) continue;  // 3.14
+    let j = i + 1;
+    while(j < text.length && /["')\]\u201d\u2019]/.test(text[j])) j++;
+    if(j < text.length && !/\s/.test(text[j])) continue;
+    const head = text.slice(start, i + 1);
+    if(ABBR.test(head)) continue;
+    if(/(?:^|\s)[A-Z]\.$/.test(head)) continue;           // initials
+    while(j < text.length && /[ \t]/.test(text[j])) j++;
+    out.push(text.slice(start, j)); start = j; i = j - 1;
+  }
+  if(start < text.length) out.push(text.slice(start));
+  return out;
+}
+
+function toRows(segs){
+  const rows = []; let cur = [];
+  const flush = () => { if(cur.length){ rows.push(cur); cur = []; } };
+  for(const s of segs){
+    if(s.type === "swap"){ cur.push(s); continue; }
+    const parts = splitSentences(s.text);
+    parts.forEach((p, k) => {
+      cur.push({type:"plain", text:p});
+      if(k < parts.length - 1 || /[.!?]["')\]\u201d\u2019]?\s*$/.test(p)) flush();
+    });
+  }
+  flush();
+  return rows.filter(r => r.some(s => s.type === "swap" || s.text.trim()));
+}
+
+function renderDiff(segs, live){
+  const rows = toRows(segs);
+  let changed = 0;
+  $("diffRows").innerHTML = rows.map((row, n) => {
+    const swaps = row.filter(s => s.type === "swap").length;
+    if(swaps) changed++;
+    const L = row.map(s => s.type === "plain" ? esc(s.text)
+      : `<span class="sw" data-i="${s.i}" tabindex="0" role="button">${esc(s.o)}</span>`).join("");
+    const R = row.map(s => s.type === "plain" ? esc(s.text)
+      : `<span class="sw" data-i="${s.i}" tabindex="0" role="button">${esc(s.n)}<span class="gl">${esc(s.o)}</span></span>`).join("");
+    return `<div class="grid-row row ${swaps ? "chg" : "same"}">`
+         + `<span class="gut">${n+1}</span><div class="cell cell-l">${L}</div>`
+         + `<span class="gut gut-r">${swaps || ""}</span><div class="cell cell-r">${R}</div></div>`;
+  }).join("");
+  $("diffCount").textContent = live ? "writing…"
+    : `${changed} of ${rows.length} sentences changed`;
+  $("diffOutLabel").textContent = LEVELS[LV-1].key;
+}
+
+/* ------------------------------------------------------------ views */
+function applyView(){
+  const hasOut = segments.length > 0;
+  const showDiff = diffOn && hasOut && !ladderOn;
+  $("decks").style.display = (ladderOn || showDiff) ? "none" : "grid";
+  $("diffView").classList.toggle("on", showDiff);
+  $("ladder").classList.toggle("on", ladderOn);
+  $("strip").style.display = (!ladderOn && hasOut) ? "flex" : "none";
+}
+
+/* Flow view keeps two independent scrollers, so link them proportionally.
+   A lock flag stops the two handlers echoing each other forever. */
+function linkScroll(a, b){
+  let lock = false;
+  const handler = src => () => {
+    if(lock) return;
+    lock = true;
+    const dst = src === a ? b : a;
+    const range = src.scrollHeight - src.clientHeight;
+    const dstRange = dst.scrollHeight - dst.clientHeight;
+    dst.scrollTop = range > 0 ? (src.scrollTop / range) * dstRange : 0;
+    requestAnimationFrame(() => { lock = false; });
+  };
+  a.addEventListener("scroll", handler(a), {passive:true});
+  b.addEventListener("scroll", handler(b), {passive:true});
+}
+
+/* ------------------------------------------------------------ hover pairing */
+function wirePairing(){
+  document.querySelectorAll(".sw").forEach(el=>{
+    const i = el.dataset.i;
+    const on  = ()=> document.querySelectorAll(`.sw[data-i="${i}"]`).forEach(x=>x.classList.add("lit"));
+    const off = ()=> document.querySelectorAll(`.sw[data-i="${i}"]`).forEach(x=>x.classList.remove("lit"));
+    el.addEventListener("mouseenter", on);
+    el.addEventListener("mouseleave", off);
+    el.addEventListener("focus", on);
+    el.addEventListener("blur", off);
+    el.addEventListener("click", e=>{ e.stopPropagation(); explain(el, +i); });
+    el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); explain(el,+i);} });
+  });
+}
+
+/* ------------------------------------------------------------ why-this-word */
+let pop = null;
+function killPop(){ if(pop){ pop.remove(); pop = null; } }
+document.addEventListener("click", killPop);
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") killPop(); });
+
+async function explain(el, i){
+  killPop();
+  const seg = segments.find(s => s.type==="swap" && s.i===i);
+  if(!seg) return;
+  const sentence = sentenceAround(i);
+  const l = LEVELS[LV-1];
+
+  pop = document.createElement("div");
+  pop.className = "pop";
+  pop.innerHTML = `<span class="h">Level ${l.n} · ${l.key}</span>
+    <div class="sw-pair"><span class="old">${esc(seg.o)}</span> → <b>${esc(seg.n)}</b></div>
+    <div id="popBody">…</div>`;
+  document.body.appendChild(pop);
+  const r = el.getBoundingClientRect();
+  pop.style.top  = (window.scrollY + r.bottom + 9) + "px";
+  pop.style.left = Math.max(10, Math.min(window.innerWidth - 300, r.left)) + "px";
+  pop.addEventListener("click", e => e.stopPropagation());
+
+  try{
+    const reader = await callModel([
+      {role:"system", content:`You explain word choice to a curious reader. One sentence, under 30 words, plain and concrete. Say what the new word pins down that the old one left vague — or, if this is a simplification, what the plain phrase makes visible. No preamble.`},
+      {role:"user", content:`Sentence: "${sentence}"\nRegister: ${l.key} — ${l.gloss}\nSwap: "${seg.o}" → "${seg.n}"\nWhy this word?`}
+    ], {maxTokens:90, temp:0.3});
+    let out = "";
+    const body = pop.querySelector("#popBody");
+    for await (const c of streamText(reader)){ out += c; body.textContent = out; }
+  }catch(e){
+    const body = pop && pop.querySelector("#popBody");
+    if(body) body.textContent = "Couldn't reach the model for a note on this one.";
+  }
+}
+
+function sentenceAround(i){
+  const flat = segments.map(s => s.type==="plain" ? s.text : s.n).join("");
+  const before = segments.slice(0, segments.findIndex(s=>s.type==="swap"&&s.i===i))
+                         .map(s => s.type==="plain"? s.text : s.n).join("").length;
+  const start = Math.max(flat.lastIndexOf(".", before-1), flat.lastIndexOf("\n", before-1)) + 1;
+  let end = flat.indexOf(".", before); if(end === -1) end = flat.length;
+  return flat.slice(start, end+1).trim();
+}
+
+/* ------------------------------------------------------------ readability */
+function syllables(w){
+  w = w.toLowerCase().replace(/[^a-z]/g,"");
+  if(w.length <= 3) return w ? 1 : 0;
+  w = w.replace(/(?:es|ed|[^laeiouy]e)$/,"").replace(/^y/,"");
+  return (w.match(/[aeiouy]{1,2}/g) || []).length || 1;
+}
+function readability(text){
+  const words = text.match(/[A-Za-z][A-Za-z'-]*/g) || [];
+  const sents = Math.max(1, (text.match(/[.!?]+(?=\s|$)/g) || []).length);
+  const syl = words.reduce((a,w)=>a+syllables(w), 0);
+  const grade = words.length ? 0.39*(words.length/sents) + 11.8*(syl/words.length) - 15.59 : 0;
+  return { words: words.length, syl, sents,
+           grade: Math.max(0, Math.round(grade*10)/10),
+           spw: words.length ? Math.round(syl/words.length*100)/100 : 0 };
+}
+function updateStats(){
+  const orig = segments.map(s => s.type==="plain"? s.text : s.o).join("");
+  const nu   = segments.map(s => s.type==="plain"? s.text : s.n).join("");
+  const a = readability(orig), b = readability(nu);
+  const swaps = segments.filter(s=>s.type==="swap");
+  const swappedWords = swaps.reduce((n,s)=>n + (s.o.match(/[A-Za-z]+/g)||[]).length, 0);
+
+  $("sWords").innerHTML = `${a.words} <small>→ ${b.words}</small>`;
+  $("sSwap").innerHTML  = `${a.words? Math.round(swappedWords/a.words*100):0}<small>%</small> <small>· ${swaps.length} swaps</small>`;
+  $("sGrade").innerHTML = `${a.grade} <span class="arrow">→</span> ${b.grade}`;
+  $("sSyl").innerHTML   = `${a.spw} <span class="arrow">→</span> ${b.spw}`;
+  const longest = swaps.map(s=>s.n).filter(x=>/^[A-Za-z-]+$/.test(x)).sort((x,y)=>y.length-x.length)[0];
+  $("sLong").textContent = longest || "—";
+  $("strip").style.display = "flex";
+}
+
+/* ------------------------------------------------------------ drift check */
+function checkDrift(){
+  const rebuilt = segments.map(s => s.type==="plain"? s.text : s.o).join("");
+  const norm = s => s.replace(/\s+/g," ").replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').trim().toLowerCase();
+  const chip = $("driftChip");
+  if(norm(rebuilt) === norm(sourceText)){ chip.style.display = "none"; return; }
+  chip.style.display = ""; chip.className = "chip warn";
+  chip.textContent = "alignment drift";
+  chip.title = "The model's echo of your source doesn't match it exactly, so the left pane is a reconstruction. The output is still valid.";
+}
+
+/* ------------------------------------------------------------ main run */
+async function run(){
+  if(busy){ abort?.abort(); return; }
+  const text = ($("input").style.display === "none") ? sourceText : $("input").value.trim();
+  if(!text){ showErr("Paste some text first."); return; }
+  sourceText = text;
+  clearErr(); killPop();
+
+  busy = true;
+  $("go").textContent = "Stop";
+  $("outChip").textContent = "thinking";
+  $("outProse").innerHTML = "";
+  $("driftChip").style.display = "none";
+  segments = [];
+  abort = new AbortController();
+
+  const lens = $("lens").value.trim().toLowerCase();
+  const useLens = (lens && lens !== "none") ? lens : "";
+  const paras = text.split(/\n{2,}/).filter(p => p.trim());
+
+  try{
+    for(let p = 0; p < paras.length; p++){
+      $("outChip").textContent = paras.length > 1 ? `para ${p+1}/${paras.length}` : "writing";
+      const reader = await callModel([
+        {role:"system", content: systemPrompt(LV, useLens)},
+        {role:"user", content: paras[p]}
+      ], {maxTokens: Math.min(4000, Math.ceil(paras[p].length/2) + 700), signal: abort.signal});
+
+      let raw = "";
+      const before = segments.slice();
+      // every re-parse of this paragraph must start from the same index base,
+      // or swap ids inflate on each streamed chunk and hover pairing breaks
+      const base = before.filter(s => s.type === "swap").length;
+      let lastPaint = 0;
+      for await (const chunk of streamText(reader)){
+        raw += chunk;
+        segments = before.concat(parseMarkup(raw, base).segs);
+        if(diffOn){
+          // rebuilding the whole grid is cheap but not free — throttle it
+          const now = performance.now();
+          if(now - lastPaint > 140){ renderDiff(segments, true); lastPaint = now; }
+        } else {
+          renderOut(segments, true);
+        }
+      }
+      segments = before.concat(parseMarkup(raw, base).segs);
+      if(p < paras.length - 1) segments.push({type:"plain", text:"\n\n"});
+    }
+
+    renderOut(segments, false);
+    $("input").style.display = "none";
+    $("srcOut").style.display = "";
+    $("editBtn").style.display = "";
+    renderSrc(segments);
+    renderDiff(segments, false);
+    applyView();
+    wirePairing();
+    updateStats();
+    checkDrift();
+    $("outChip").textContent = `${segments.filter(s=>s.type==="swap").length} swaps`;
+  }catch(e){
+    if(e.name !== "AbortError") showErr(e.message);
+    $("outChip").textContent = "stopped";
+  }finally{
+    busy = false; $("go").textContent = "Transpose"; abort = null;
+  }
+}
+
+/* ------------------------------------------------------------ ladder mode */
+async function runLadder(){
+  const text = ($("input").style.display === "none") ? sourceText : $("input").value.trim();
+  if(!text){ showErr("Paste a sentence or two first."); return; }
+  clearErr();
+  const lens = $("lens").value.trim().toLowerCase();
+  const useLens = (lens && lens !== "none") ? lens : "";
+  const short = text.split(/\n{2,}/)[0].slice(0, 900);
+
+  $("ladder").innerHTML = LEVELS.map(l =>
+    `<div class="rung">
+       <span class="rung-key" style="color:${l.color}"><span class="dot" style="background:${l.color}"></span>${l.n} · ${l.key}</span>
+       <div class="rung-txt" id="rung${l.n}"><span style="opacity:.4">waiting…</span></div>
+     </div>`).join("");
+
+  for(const l of LEVELS){
+    const cell = $("rung"+l.n);
+    cell.innerHTML = '<span style="opacity:.4">writing…</span>';
+    try{
+      const reader = await callModel([
+        {role:"system", content: systemPrompt(l.n, useLens)},
+        {role:"user", content: short}
+      ], {maxTokens: Math.min(2400, Math.ceil(short.length/2)+500), temp:0.3});
+      let raw = "";
+      for await (const c of streamText(reader)){
+        raw += c;
+        const {segs} = parseMarkup(raw);
+        cell.innerHTML = segs.map(s => s.type==="plain" ? esc(s.text)
+          : `<span class="m" style="background:${l.color}1f;box-shadow:inset 0 -2px 0 ${l.color}66">${esc(s.n)}</span>`).join("");
+      }
+    }catch(e){ cell.innerHTML = '<span style="opacity:.45">unavailable</span>'; }
+  }
+}
+
+/* ------------------------------------------------------------ chrome */
+function showErr(m){ $("err").textContent = "⚠ " + m; $("err").classList.add("on"); }
+function clearErr(){ $("err").classList.remove("on"); }
+
+$("go").addEventListener("click", () => ladderOn ? runLadder() : run());
+
+function backToEdit(){
+  diffOn = false;
+  $("diffBtn").setAttribute("aria-pressed","false");
+  $("input").style.display = ""; $("srcOut").style.display = "none";
+  $("editBtn").style.display = "none"; $("input").value = sourceText;
+  applyView();
+}
+$("editBtn").addEventListener("click", backToEdit);
+$("diffEdit").addEventListener("click", backToEdit);
+
+$("diffBtn").addEventListener("click", e=>{
+  diffOn = !diffOn;
+  e.currentTarget.setAttribute("aria-pressed", diffOn.toString());
+  if(diffOn && segments.length){
+    // returning to diff after editing — make sure the source pane is rendered
+    $("input").style.display = "none";
+    $("srcOut").style.display = "";
+    $("editBtn").style.display = "";
+    renderDiff(segments, false);
+    wirePairing();
+  }
+  applyView();
+});
+
+$("onlyChg").addEventListener("click", e=>{
+  const on = e.currentTarget.getAttribute("aria-pressed") === "true";
+  e.currentTarget.setAttribute("aria-pressed", (!on).toString());
+  document.body.classList.toggle("only-chg", !on);
+});
+$("glossBtn").addEventListener("click", e=>{
+  const on = e.currentTarget.getAttribute("aria-pressed") === "true";
+  e.currentTarget.setAttribute("aria-pressed", (!on).toString());
+  document.body.classList.toggle("no-gloss", on);
+});
+$("setBtn").addEventListener("click", e=>{
+  const on = e.currentTarget.getAttribute("aria-pressed") === "true";
+  e.currentTarget.setAttribute("aria-pressed", (!on).toString());
+  $("drawer").classList.toggle("on", !on);
+});
+$("ladderBtn").addEventListener("click", e=>{
+  ladderOn = !ladderOn;
+  e.currentTarget.setAttribute("aria-pressed", ladderOn.toString());
+  applyView();
+});
+$("input").addEventListener("input", e=>{
+  const w = (e.target.value.match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
+  $("srcChip").textContent = w + (w === 1 ? " word" : " words");
+});
+document.addEventListener("keydown", e=>{
+  if((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); ladderOn ? runLadder() : run(); }
+});
+
+$("cfgUrl").value = CONFIG.baseUrl;
+$("cfgModel").value = CONFIG.model;
+$("cfgKey").value = CONFIG.apiKey;
+buildStops();
+setLevel(3);
+linkScroll($("srcOut"), $("outBody"));
+</script>
+</body>
+</html>
